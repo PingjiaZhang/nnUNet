@@ -254,12 +254,12 @@ class nnUNetTrainer(NetworkTrainer):
         dropout_op_kwargs = {'p': 0, 'inplace': True}
         net_nonlin = nn.LeakyReLU
         net_nonlin_kwargs = {'negative_slope': 1e-2, 'inplace': True}
-        self.network = Generic_UNet(self.num_input_channels, self.base_num_features, self.num_classes, net_numpool,
+        self.network = Generic_UNet(self.num_input_channels, self.base_num_features,1, net_numpool,
                                     self.conv_per_stage, 2, conv_op, norm_op, norm_op_kwargs, dropout_op,
                                     dropout_op_kwargs,
                                     net_nonlin, net_nonlin_kwargs, False, False, lambda x: x, InitWeights_He(1e-2),
                                     self.net_num_pool_op_kernel_sizes, self.net_conv_kernel_sizes, False, True, True)
-        self.network.inference_apply_nonlin = softmax_helper
+        #self.network.inference_apply_nonlin = softmax_helper
 
         if torch.cuda.is_available():
             self.network.cuda()

@@ -152,7 +152,7 @@ def crop_2D_image_force_fg(img, crop_size, valid_voxels):
     return result
 
 
-class DataLoader3D_ng(SlimDataLoaderBase):
+class DataLoader3D(SlimDataLoaderBase):
     def __init__(self, data, patch_size, final_patch_size, batch_size, has_prev_stage=False,
                  oversample_foreground_percent=0.0, memmap_mode="r", pad_mode="edge", pad_kwargs_data=None,
                  pad_sides=None):
@@ -179,7 +179,7 @@ class DataLoader3D_ng(SlimDataLoaderBase):
         :param random: Sample keys randomly; CAREFUL! non-random sampling requires batch_size=1, otherwise you will iterate batch_size times over the dataset
         :param oversample_foreground: half the batch will be forced to contain at least some foreground (equal prob for each of the foreground classes)
         """
-        super(DataLoader3D_ng, self).__init__(data, batch_size, None)
+        super(DataLoader3D, self).__init__(data, batch_size, None)
         if pad_kwargs_data is None:
             pad_kwargs_data = OrderedDict()
         self.pad_kwargs_data = pad_kwargs_data
@@ -378,7 +378,7 @@ class DataLoader3D_ng(SlimDataLoaderBase):
                                                  (-min(0, bbox_z_lb), max(bbox_z_ub - shape[2], 0))),
                                  'constant', **{'constant_values': 1})
 
-            seg[j, 0] = np.pad(case_all_data[-1:], ((0, 0),
+            seg[j, 0] =np.pad(case_all_data[-1:], ((0, 0),
                                                     (-min(0, bbox_x_lb), max(bbox_x_ub - shape[0], 0)),
                                                     (-min(0, bbox_y_lb), max(bbox_y_ub - shape[1], 0)),
                                                     (-min(0, bbox_z_lb), max(bbox_z_ub - shape[2], 0))),

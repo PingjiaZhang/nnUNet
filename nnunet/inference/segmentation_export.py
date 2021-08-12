@@ -136,19 +136,20 @@ def save_segmentation_nifti_from_softmax(segmentation_softmax: Union[str, np.nda
     else:
         seg_old_size = seg_old_spacing
 
-    if seg_postprogess_fn is not None:
-        seg_old_size_postprocessed = seg_postprogess_fn(np.copy(seg_old_size), *seg_postprocess_args)
-    else:
-        seg_old_size_postprocessed = seg_old_size
+    # TODO anning 20210807
+    # if seg_postprogess_fn is not None:
+    #     seg_old_size_postprocessed = seg_postprogess_fn(np.copy(seg_old_size), *seg_postprocess_args)
+    # else:
+    seg_old_size_postprocessed = seg_old_size
 
-    seg_resized_itk = sitk.GetImageFromArray(seg_old_size_postprocessed.astype(np.uint8))
+    seg_resized_itk = sitk.GetImageFromArray(seg_old_size_postprocessed.astype(np.float16))
     seg_resized_itk.SetSpacing(properties_dict['itk_spacing'])
     seg_resized_itk.SetOrigin(properties_dict['itk_origin'])
     seg_resized_itk.SetDirection(properties_dict['itk_direction'])
     sitk.WriteImage(seg_resized_itk, out_fname)
 
     if (non_postprocessed_fname is not None) and (seg_postprogess_fn is not None):
-        seg_resized_itk = sitk.GetImageFromArray(seg_old_size.astype(np.uint8))
+        seg_resized_itk = sitk.GetImageFromArray(seg_old_size.astype(np.float16))
         seg_resized_itk.SetSpacing(properties_dict['itk_spacing'])
         seg_resized_itk.SetOrigin(properties_dict['itk_origin'])
         seg_resized_itk.SetDirection(properties_dict['itk_direction'])
@@ -206,7 +207,7 @@ def save_segmentation_nifti(segmentation, out_fname, dct, order=1, force_separat
                     lowres_axis = None
 
             print("separate z:", do_separate_z, "lowres axis", lowres_axis)
-            seg_old_spacing = resample_data_or_seg(segmentation[None], shape_original_after_cropping, is_seg=True,
+            seg_old_spacing = resample_data_or_seg(segmentation[None], shape_original_after_cropping, is_seg=False,
                                                    axis=lowres_axis, order=order, do_separate_z=do_separate_z, cval=0,
                                                    order_z=order_z)[0]
     else:
@@ -224,7 +225,7 @@ def save_segmentation_nifti(segmentation, out_fname, dct, order=1, force_separat
     else:
         seg_old_size = seg_old_spacing
 
-    seg_resized_itk = sitk.GetImageFromArray(seg_old_size.astype(np.uint8))
+    seg_resized_itk = sitk.GetImageFromArray(seg_old_size.astype(np.float16))
     seg_resized_itk.SetSpacing(dct['itk_spacing'])
     seg_resized_itk.SetOrigin(dct['itk_origin'])
     seg_resized_itk.SetDirection(dct['itk_direction'])

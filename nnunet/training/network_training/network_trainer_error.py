@@ -119,7 +119,7 @@ class NetworkTrainer(object):
             self.use_progress_bar = bool(int(os.environ['nnunet_use_progress_bar']))
 
         ################# Settings for saving checkpoints ##################################
-        self.save_every = 5
+        self.save_every = 50
         self.save_latest_only = True  # if false it will not store/overwrite _latest but separate files each
         # time an intermediate checkpoint is created
         self.save_intermediate_checkpoints = True  # whether or not to save checkpoint_latest
@@ -570,8 +570,7 @@ class NetworkTrainer(object):
             #self.print_to_log_file("current best_val_eval_criterion_MA is %.4f0" % self.best_val_eval_criterion_MA)
             #self.print_to_log_file("current val_eval_criterion_MA is %.4f" % self.val_eval_criterion_MA)
 
-            # TODO anning 20210807
-            if self.val_eval_criterion_MA < self.best_val_eval_criterion_MA:
+            if self.val_eval_criterion_MA > self.best_val_eval_criterion_MA:
                 self.best_val_eval_criterion_MA = self.val_eval_criterion_MA
                 #self.print_to_log_file("saving best epoch checkpoint...")
                 if self.save_best_checkpoint: self.save_checkpoint(join(self.output_folder, "model_best.model"))

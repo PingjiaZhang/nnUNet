@@ -268,7 +268,7 @@ class SegmentationNetwork(NeuralNetwork):
         assert 0 < step_size <= 1, 'step_size must be larger than 0 and smaller or equal to 1'
 
         # our step width is patch_size*step_size at most, but can be narrower. For example if we have image size of
-        # 110, patch size of 64 and step_size of 0.5, then we want to make 3 steps starting at coordinate 0, 23, 46
+        # 110, patch size of 32 and step_size of 0.5, then we want to make 4 steps starting at coordinate 0, 27, 55, 78
         target_step_sizes_in_voxels = [i * step_size for i in patch_size]
 
         num_steps = [int(np.ceil((i - k) / j)) + 1 for i, j, k in zip(image_size, target_step_sizes_in_voxels, patch_size)]
@@ -410,10 +410,8 @@ class SegmentationNetwork(NeuralNetwork):
             else:
                 class_probabilities_here = class_probabilities
             predicted_segmentation = np.zeros(class_probabilities_here.shape[1:], dtype=np.float32)
-
-            # TODO anning 20210807
-            # for i, c in enumerate(regions_class_order):
-            #     predicted_segmentation[class_probabilities_here[i] > 0.5] = c
+            for i, c in enumerate(regions_class_order):
+                predicted_segmentation[class_probabilities_here[i] > 0.5] = c
 
         if all_in_gpu:
             if verbose: print("copying results to CPU")
@@ -422,9 +420,6 @@ class SegmentationNetwork(NeuralNetwork):
                 predicted_segmentation = predicted_segmentation.detach().cpu().numpy()
 
             class_probabilities = class_probabilities.detach().cpu().numpy()
-
-        # TODO anning 20210807
-        predicted_segmentation = class_probabilities
 
         if verbose: print("prediction done")
         return predicted_segmentation, class_probabilities

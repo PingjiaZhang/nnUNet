@@ -36,6 +36,10 @@ from nnunet.training.learning_rate.poly_lr import poly_lr
 from batchgenerators.utilities.file_and_folder_operations import *
 
 
+# TODO anning 20210807
+softmax_helper = lambda x: x
+
+
 class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
     """
     Info for Fabian: same as internal nnUNetTrainerV2_2
@@ -46,7 +50,7 @@ class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
         super().__init__(plans_file, fold, output_folder, dataset_directory, batch_dice, stage, unpack_data,
                          deterministic, fp16)
         self.max_num_epochs = 1000
-        self.initial_lr = 1e-2
+        self.initial_lr = 1e-3
         self.deep_supervision_scales = None
         self.ds_loss_weights = None
 
@@ -86,6 +90,7 @@ class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
             weights = weights / weights.sum()
             self.ds_loss_weights = weights
             # now wrap the loss
+            self.loss = nn.MSELoss()
             self.loss = MultipleOutputLoss2(self.loss, self.ds_loss_weights)
             ################# END ###################
 
@@ -151,7 +156,7 @@ class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
         dropout_op_kwargs = {'p': 0, 'inplace': True}
         net_nonlin = nn.LeakyReLU
         net_nonlin_kwargs = {'negative_slope': 1e-2, 'inplace': True}
-        self.network = Generic_UNet(self.num_input_channels, self.base_num_features, self.num_classes,
+        self.network = Generic_UNet(self.num_input_channels, self.base_num_features, 1,
                                     len(self.net_num_pool_op_kernel_sizes),
                                     self.conv_per_stage, 2, conv_op, norm_op, norm_op_kwargs, dropout_op,
                                     dropout_op_kwargs,
@@ -159,12 +164,13 @@ class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
                                     self.net_num_pool_op_kernel_sizes, self.net_conv_kernel_sizes, False, True, True)
         if torch.cuda.is_available():
             self.network.cuda()
-        self.network.inference_apply_nonlin = softmax_helper
+        # TODO anning 20210807
+        self.network.inference_apply_nonlin = softmax_helper  # 打开，上面改为lambda x:x
 
     def initialize_optimizer_and_scheduler(self):
         assert self.network is not None, "self.initialize_network must be called first"
-        self.optimizer = torch.optim.SGD(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
-                                         momentum=0.99, nesterov=True)
+        self.optimizer = torch.optim.AdamW(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
+                                           amsgrad=True)
         self.lr_scheduler = None
 
     def run_online_evaluation(self, output, target):
@@ -245,6 +251,8 @@ class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
         if self.fp16:
             with autocast():
                 output = self.network(data)
+                print("8" * 100)
+                print(f"output[0].min(): {output[0].min()}")
                 del data
                 l = self.loss(output, target)
 
@@ -347,7 +355,7 @@ class nnUNetTrainerV2_ng(nnUNetTrainer_ng):
 
         self.deep_supervision_scales = [[1, 1, 1]] + list(list(i) for i in 1 / np.cumprod(
             np.vstack(self.net_num_pool_op_kernel_sizes), axis=0))[:-1]
-
+        # self.deep_supervision_scales = None
         if self.threeD:
             self.data_aug_params = default_3D_augmentation_params
             self.data_aug_params['rotation_x'] = (-30. / 360 * 2. * np.pi, 30. / 360 * 2. * np.pi)
